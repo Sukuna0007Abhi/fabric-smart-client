@@ -147,11 +147,12 @@ func newNotifiWithGRPC(network string, grpcClientProvider GRPCClientProvider) (*
 	notifyClient := committerpb.NewNotifierClient(cc)
 
 	nlm := &notificationListenerManager{
-		notifyClient:   notifyClient,
-		requestQueue:   make(chan *committerpb.NotificationRequest),  // Queue for outgoing requests to the committer
-		responseQueue:  make(chan *committerpb.NotificationResponse), // Queue for incoming responses/notifications
-		handlers:       make(map[string][]fabric.FinalityListener),   // Map: txID -> list of listeners
-		handlerTimeout: DefaultHandlerTimeout,
+		notifyClient:        notifyClient,
+		requestQueue:        make(chan *committerpb.NotificationRequest),  // Queue for outgoing requests to the committer
+		responseQueue:       make(chan *committerpb.NotificationResponse), // Queue for incoming responses/notifications
+		handlers:            make(map[string][]fabric.FinalityListener),   // Map: txID -> list of listeners
+		handlerTimeout:      DefaultHandlerTimeout,
+		notificationTimeout: DefaultNotificationTimeout,
 	}
 
 	return nlm, nil

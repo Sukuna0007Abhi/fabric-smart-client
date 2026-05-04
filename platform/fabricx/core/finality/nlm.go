@@ -31,11 +31,18 @@ var logger = logging.MustGetLogger()
 // will leak goroutines, but this is preferable to blocking the dispatcher.
 const DefaultHandlerTimeout = 5 * time.Second
 
+// DefaultNotificationTimeout is the default timeout for a finality notification
+// request sent to the committer. If the committer does not respond with a
+// transaction status within this duration, the request times out and the
+// transaction is reported as unknown.
+const DefaultNotificationTimeout = 30 * time.Second
+
 type notificationListenerManager struct {
-	notifyClient   committerpb.NotifierClient
-	requestQueue   chan *committerpb.NotificationRequest
-	responseQueue  chan *committerpb.NotificationResponse
-	handlerTimeout time.Duration
+	notifyClient        committerpb.NotifierClient
+	requestQueue        chan *committerpb.NotificationRequest
+	responseQueue       chan *committerpb.NotificationResponse
+	handlerTimeout      time.Duration
+	notificationTimeout time.Duration
 
 	handlers   map[driver.TxID][]fabric.FinalityListener
 	handlersMu sync.RWMutex
@@ -220,8 +227,7 @@ func (n *notificationListenerManager) AddFinalityListener(txID driver.TxID, list
 		TxStatusRequest: &committerpb.TxIDsBatch{
 			TxIds: txIDs,
 		},
-		// TODO: set a proper timeout
-		Timeout: durationpb.New(10 * time.Second),
+		Timeout: durationpb.New(n.notificationTimeout),
 	}
 
 	return nil

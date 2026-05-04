@@ -106,10 +106,11 @@ func setupTest(tb testing.TB) (*notificationListenerManager, *mock.FakeNotifier_
 	}
 
 	nlm := &notificationListenerManager{
-		notifyClient:  fakeClient,
-		requestQueue:  make(chan *committerpb.NotificationRequest),
-		responseQueue: make(chan *committerpb.NotificationResponse),
-		handlers:      make(map[driver.TxID][]fabric.FinalityListener),
+		notifyClient:        fakeClient,
+		requestQueue:        make(chan *committerpb.NotificationRequest),
+		responseQueue:       make(chan *committerpb.NotificationResponse),
+		handlers:            make(map[driver.TxID][]fabric.FinalityListener),
+		notificationTimeout: DefaultNotificationTimeout,
 	}
 
 	return nlm, fakeStream
@@ -301,6 +302,9 @@ func TestNotificationListenerManager(t *testing.T) {
 		req := fakeStream.SendArgsForCall(0)
 		require.NotNil(t, req.GetTxStatusRequest())
 		require.Contains(t, req.GetTxStatusRequest().GetTxIds(), "tx_send_check")
+		// Verify the notification timeout is set from the configurable field
+		require.NotNil(t, req.GetTimeout())
+		require.Equal(t, DefaultNotificationTimeout, req.GetTimeout().AsDuration())
 	})
 
 	t.Run("AddFinalityListener_Duplicate_Is_Rejected", func(t *testing.T) {
